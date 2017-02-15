@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="aio" id="Project_1aff2e3b" template="Default" database="PostgreSQL" >
+	<comment><![CDATA[aio-test database diagram]]></comment>
+	<schema name="aio" schemaname="aio" >
+		<table name="categories" >
+			<comment><![CDATA[List of dish categories and subcategories.]]></comment>
+			<column name="id" type="integer" jt="4" mandatory="y" >
+				<defo>1</defo>
+			</column>
+			<column name="name" type="varchar" length="100" jt="12" mandatory="y" />
+			<column name="changed_at" type="timestamp" jt="93" mandatory="y" >
+				<defo>current_timestamp</defo>
+			</column>
+			<column name="changed_by" type="integer" jt="4" mandatory="y" />
+			<index name="pk_categories" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+			<index name="idx_categories" unique="NORMAL" >
+				<column name="changed_by" />
+			</index>
+			<fk name="fk_categories" to_schema="aio" to_table="local_managers" >
+				<fk_column name="changed_by" pk="id" />
+			</fk>
+		</table>
+		<table name="dishes" >
+			<comment><![CDATA[List of all dishes with historical data.]]></comment>
+			<column name="id" type="integer" jt="4" mandatory="y" >
+				<defo>1</defo>
+				<comment><![CDATA[Current id, unique.]]></comment>
+			</column>
+			<column name="init_id" type="integer" jt="4" mandatory="y" >
+				<comment><![CDATA[Id of first version of dish.]]></comment>
+			</column>
+			<column name="previous_id" type="integer" jt="4" >
+				<comment><![CDATA[Previous version of dish.]]></comment>
+			</column>
+			<column name="name" type="varchar" length="100" jt="12" mandatory="y" >
+				<comment><![CDATA[Name of dish]]></comment>
+			</column>
+			<column name="discription" type="text" jt="12" mandatory="y" >
+				<comment><![CDATA[Discription of dish.]]></comment>
+			</column>
+			<column name="price" type="numeric" length="2" decimal="12" jt="2" mandatory="y" />
+			<column name="category_id" type="integer" jt="4" mandatory="y" />
+			<column name="tree_id" type="integer" jt="4" mandatory="y" />
+			<column name="changed_at" type="timestamp" jt="93" mandatory="y" >
+				<defo>current_timestamp</defo>
+			</column>
+			<column name="changed_by" type="integer" jt="4" mandatory="y" />
+			<index name="pk_dishes" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+			<index name="idx_dishes" unique="NORMAL" >
+				<column name="changed_by" />
+			</index>
+			<index name="idx_dishes_0" unique="NORMAL" >
+				<column name="category_id" />
+			</index>
+			<index name="idx_dishes_1" unique="NORMAL" >
+				<column name="tree_id" />
+			</index>
+			<fk name="fk_dishes" to_schema="aio" to_table="local_managers" >
+				<fk_column name="changed_by" pk="id" />
+			</fk>
+			<fk name="fk_dishes_0" to_schema="aio" to_table="categories" >
+				<fk_column name="category_id" pk="id" />
+			</fk>
+			<fk name="fk_dishes_1" to_schema="aio" to_table="trees" >
+				<fk_column name="tree_id" pk="id" />
+			</fk>
+		</table>
+		<table name="local_managers" >
+			<comment><![CDATA[Managers in headquarter.]]></comment>
+			<column name="id" type="integer" jt="4" mandatory="y" >
+				<defo>1</defo>
+				<comment><![CDATA[Unique id.]]></comment>
+			</column>
+			<column name="first_name" type="varchar" length="100" jt="12" mandatory="y" />
+			<column name="second_name" type="varchar" length="100" jt="12" mandatory="y" />
+			<column name="hired_at" type="date" jt="91" mandatory="y" />
+			<column name="fired_at" type="date" jt="91" />
+			<index name="pk_local_managers" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+		</table>
+		<table name="menu" >
+			<comment><![CDATA[List of dishes in current menu.]]></comment>
+			<column name="dish_id" type="integer" jt="4" mandatory="y" />
+			<column name="inserted_at" type="timestamp" jt="93" mandatory="y" />
+			<column name="inserted_by" type="integer" jt="4" mandatory="y" />
+			<index name="pk_menu" unique="PRIMARY_KEY" >
+				<column name="dish_id" />
+			</index>
+			<index name="idx_menu" unique="NORMAL" >
+				<column name="inserted_by" />
+			</index>
+			<fk name="fk_menu" to_schema="aio" to_table="dishes" >
+				<fk_column name="dish_id" pk="id" />
+			</fk>
+			<fk name="fk_menu_0" to_schema="aio" to_table="local_managers" >
+				<fk_column name="inserted_by" pk="id" />
+			</fk>
+		</table>
+		<table name="orders" >
+			<comment><![CDATA[List of all orders from all restaurants]]></comment>
+			<column name="id" type="integer" jt="4" mandatory="y" >
+				<defo>1</defo>
+			</column>
+			<column name="manager" type="integer" jt="4" mandatory="y" />
+			<column name="tree" type="integer" jt="4" mandatory="y" />
+			<column name="ordered_at" type="timestamp" jt="93" mandatory="y" />
+			<column name="order_content" type="json" jt="2000" mandatory="y" >
+				<comment><![CDATA[json like '[{"dish_id": 1, "n": 1}]' ]]></comment>
+			</column>
+			<index name="pk_orders" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+			<index name="idx_orders" unique="NORMAL" >
+				<column name="manager" />
+			</index>
+			<index name="idx_orders_0" unique="NORMAL" >
+				<column name="tree" />
+			</index>
+			<fk name="fk_orders" to_schema="aio" to_table="remote_managers" >
+				<fk_column name="manager" pk="id" />
+			</fk>
+			<fk name="fk_orders_0" to_schema="aio" to_table="trees" >
+				<fk_column name="tree" pk="id" />
+			</fk>
+		</table>
+		<table name="remote_managers" >
+			<comment><![CDATA[Managers in remote restaurants.]]></comment>
+			<column name="id" type="integer" jt="4" mandatory="y" >
+				<defo>1</defo>
+				<comment><![CDATA[Unique id.]]></comment>
+			</column>
+			<column name="first_name" type="varchar" length="100" jt="12" mandatory="y" />
+			<column name="second_name" type="varchar" length="100" jt="12" mandatory="y" />
+			<column name="hired_at" type="date" jt="91" mandatory="y" />
+			<column name="fired_at" type="date" jt="91" />
+			<column name="restaurant_id" type="integer" jt="4" mandatory="y" />
+			<index name="pk_remote_managers" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+			<index name="idx_remote_managers" unique="NORMAL" >
+				<column name="restaurant_id" />
+			</index>
+			<fk name="fk_remote_managers" to_schema="aio" to_table="restaurants" >
+				<fk_column name="restaurant_id" pk="id" />
+			</fk>
+		</table>
+		<table name="restaurants" >
+			<comment><![CDATA[List of restaurants.]]></comment>
+			<column name="id" type="integer" jt="4" mandatory="y" >
+				<defo>1</defo>
+				<comment><![CDATA[Unique id.]]></comment>
+			</column>
+			<column name="name" type="varchar" length="100" jt="12" mandatory="y" />
+			<index name="pk_restaurants" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+		</table>
+		<table name="trees" >
+			<comment><![CDATA[Hierarchy of categories]]></comment>
+			<column name="id" type="integer" jt="4" mandatory="y" >
+				<defo>1</defo>
+			</column>
+			<column name="tree" type="json" jt="2000" mandatory="y" />
+			<column name="changed_at" type="timestamp" jt="93" mandatory="y" >
+				<defo>current_timestamp</defo>
+			</column>
+			<column name="changed_by" type="integer" jt="4" mandatory="y" />
+			<index name="pk_category_trees" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+			<index name="idx_category_trees" unique="NORMAL" >
+				<column name="changed_by" />
+			</index>
+			<fk name="fk_category_trees" to_schema="aio" to_table="local_managers" >
+				<fk_column name="changed_by" pk="id" />
+			</fk>
+		</table>
+	</schema>
+	<layout name="Default Layout" id="Layout_3707859e" show_relation="columns" >
+		<entity schema="aio" name="local_managers" color="bcd5f1" x="272" y="288" />
+		<entity schema="aio" name="menu" color="bcd5f1" x="496" y="288" />
+		<entity schema="aio" name="restaurants" color="bcd5f1" x="272" y="112" />
+		<entity schema="aio" name="orders" color="bcd5f1" x="48" y="288" />
+		<entity schema="aio" name="remote_managers" color="bcd5f1" x="48" y="48" />
+		<entity schema="aio" name="trees" color="bcd5f1" x="272" y="512" />
+		<entity schema="aio" name="categories" color="bcd5f1" x="64" y="512" />
+		<entity schema="aio" name="dishes" color="bcd5f1" x="496" y="512" />
+	</layout>
+</project>
