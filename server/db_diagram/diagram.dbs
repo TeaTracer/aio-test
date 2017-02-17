@@ -65,7 +65,7 @@
 			</index>
 		</table>
 		<table name="menu" >
-			<column name="dish_id" type="serial" jt="4" mandatory="y" />
+			<column name="dish_id" type="integer" jt="4" mandatory="y" />
 			<column name="inserted_at" type="timestamp" jt="93" mandatory="y" />
 			<column name="inserted_by" type="integer" jt="4" mandatory="y" />
 			<index name="pk_menu" unique="PRIMARY_KEY" >
@@ -150,9 +150,9 @@
 		<entity schema="aio" name="restaurants" color="bcd5f1" x="272" y="112" />
 		<entity schema="aio" name="orders" color="bcd5f1" x="48" y="288" />
 		<entity schema="aio" name="local_managers" color="bcd5f1" x="272" y="288" />
-		<entity schema="aio" name="menu" color="bcd5f1" x="496" y="288" />
 		<entity schema="aio" name="categories" color="bcd5f1" x="64" y="512" />
 		<entity schema="aio" name="trees" color="bcd5f1" x="272" y="512" />
 		<entity schema="aio" name="dishes" color="bcd5f1" x="496" y="512" />
+		<entity schema="aio" name="menu" color="bcd5f1" x="496" y="288" />
 	</layout>
 </project>
