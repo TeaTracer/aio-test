@@ -45,7 +45,7 @@ CREATE TABLE aio.dishes (
 	previous_id          integer  ,
 	name                 varchar(100)  NOT NULL,
 	discription          text  NOT NULL,
-	price                numeric(2,12)  NOT NULL,
+	price                numeric(10,2)  NOT NULL,
 	category_id          integer  NOT NULL,
 	tree_id              integer  NOT NULL,
 	changed_at           timestamp DEFAULT current_timestamp NOT NULL,

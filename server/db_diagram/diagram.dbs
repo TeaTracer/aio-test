@@ -25,7 +25,7 @@
 			<column name="previous_id" type="integer" jt="4" />
 			<column name="name" type="varchar" length="100" jt="12" mandatory="y" />
 			<column name="discription" type="text" jt="12" mandatory="y" />
-			<column name="price" type="numeric" length="2" decimal="12" jt="2" mandatory="y" />
+			<column name="price" type="numeric" length="10" decimal="2" jt="2" mandatory="y" />
 			<column name="category_id" type="integer" jt="4" mandatory="y" />
 			<column name="tree_id" type="integer" jt="4" mandatory="y" />
 			<column name="changed_at" type="timestamp" jt="93" mandatory="y" >
@@ -152,7 +152,7 @@
 		<entity schema="aio" name="local_managers" color="bcd5f1" x="272" y="288" />
 		<entity schema="aio" name="categories" color="bcd5f1" x="64" y="512" />
 		<entity schema="aio" name="trees" color="bcd5f1" x="272" y="512" />
-		<entity schema="aio" name="dishes" color="bcd5f1" x="496" y="512" />
 		<entity schema="aio" name="menu" color="bcd5f1" x="496" y="288" />
+		<entity schema="aio" name="dishes" color="bcd5f1" x="496" y="512" />
 	</layout>
 </project>
