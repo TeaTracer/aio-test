@@ -63,7 +63,7 @@ CREATE INDEX idx_dishes_0 ON aio.dishes ( category_id );
 CREATE INDEX idx_dishes_1 ON aio.dishes ( tree_id );
 
 CREATE TABLE aio.menu (
-	dish_id              serial  NOT NULL,
+	dish_id              integer NOT NULL,
 	inserted_at          timestamp  NOT NULL,
 	inserted_by          integer  NOT NULL,
 	CONSTRAINT pk_menu PRIMARY KEY ( dish_id ),
