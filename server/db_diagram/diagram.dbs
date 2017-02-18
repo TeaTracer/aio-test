@@ -21,7 +21,7 @@
 		</table>
 		<table name="dishes" >
 			<column name="id" type="serial" jt="4" mandatory="y" />
-			<column name="init" type="integer" jt="4" mandatory="y" />
+			<column name="init" type="integer" jt="4" />
 			<column name="previous" type="integer" jt="4" />
 			<column name="name" type="varchar" length="100" jt="12" mandatory="y" />
 			<column name="discription" type="text" jt="12" mandatory="y" />

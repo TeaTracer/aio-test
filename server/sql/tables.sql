@@ -37,7 +37,7 @@ CREATE INDEX idx_categories ON aio.categories ( changed_by );
 
 CREATE TABLE aio.dishes (
 	id                   serial  NOT NULL,
-	init                 integer  NOT NULL,
+	init                 integer  ,
 	previous             integer  ,
 	name                 varchar(100)  NOT NULL,
 	discription          text  NOT NULL,
