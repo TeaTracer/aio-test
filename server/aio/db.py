@@ -1,27 +1,41 @@
 import asyncio
-import aiopg
-import json
 from typing import Dict
+from abc import ABCMeta, abstractmethod
 from aiopg.sa import create_engine
-import sqlalchemy as sa
+
 from .tables import remote_managers, local_managers, restaurants, \
                     orders, dishes, menu, categories, trees
 
 
-class Manager:
+class Manager(metaclass=ABCMeta):
+    @property
+    @abstractmethod
+    def dsn(self):
+        """ data source name """
+        pass
+
+    async def _verify(self, login, password):
+        pass
+
+    async def _insert(self, table, values_dict):
+        """ one value insertion to table """
+
+        async with create_engine(self.dsn) as engine:
+            async with engine.acquire() as conn:
+                uid = await conn.scalar(table.insert().values(**values_dict))
+                return uid
+
+
+class RemoteManager:
     """ local manager with administrative functions """
 
     dsn = 'dbname=aio user=manager password=manager host=127.0.0.1 port=1235'
 
-    async def _insert(self, table, values_dict):
-        """ general one value insertion to table """
 
-        async with create_engine(self.dsn) as engine:
-            async with engine.acquire() as conn:
-                #  q = table.insert().values(**values_dict)
-                #  q = table.insert().values(**values_dict)
-                uid = await conn.scalar(table.insert().values(**values_dict))
-                return uid
+class LocalManager:
+    """ local manager with administrative functions """
+
+    dsn = 'dbname=aio user=manager password=manager host=127.0.0.1 port=1235'
 
     async def add_local_manager(self,
                                 name: str):
@@ -81,4 +95,4 @@ class Manager:
 
 
 def go():
-    asyncio.get_event_loop().run_until_complete(Manager().go())
+    asyncio.get_event_loop().run_until_complete(LocalManager().go())
