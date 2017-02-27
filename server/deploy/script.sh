@@ -122,6 +122,7 @@ fix_virtualenv() {
     . .venv/bin/activate
     log curl "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
     log python3.6 get-pip.py
+    log rm get-pip.py
 }
 
 test_postgres_ppa() {

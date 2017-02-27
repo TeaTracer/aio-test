@@ -1,24 +1,18 @@
 #! /bin/sh
 
-openssl genrsa -des3 -passout pass:x \
-    -out server.pass.key 2048
+DEST="/etc/ssl/"
+PASSKEY="${DEST}server.pass.key"
+KEY="${DEST}server.key"
+CRT="${DEST}server.crt"
+CSR="${DEST}server.csr"
 
-openssl rsa -passin pass:x \
-    -in server.pass.key \
-    -out server.key
+openssl genrsa -des3 -passout pass:x -out $PASSKEY 2048
 
-rm server.pass.key
+openssl rsa -passin pass:x -in $PASSKEY -out $KEY
 
-openssl req -new \
-    -key server.key \
-    -out server.csr \
+openssl req -new -key $KEY -out $CSR \
     -subj "/C=RU/ST=Moscow/L=Moscow/O=Global Security/OU=IT Department/CN=example.com"
 
-openssl x509 -req -sha256 -days 365 \
-    -in server.csr \
-    -signkey server.key \
-    -out server.crt
+openssl x509 -req -sha256 -days 365 -in $CSR -signkey $KEY -out $CRT
 
-sudo cp server.key server.csr /etc/ssl/
-
-rm server.key server.csr
+rm $PASSKEY
