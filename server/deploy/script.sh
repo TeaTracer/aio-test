@@ -5,7 +5,6 @@
 PROJECT="aio-test"
 DATABASE='aio'
 LOG="/var/log/$PROJECT-deploy.log"
-# BRANCH="dev" # master or dev
 REPOSITORY="https://github.com/TeaTracer/$PROJECT.git"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
