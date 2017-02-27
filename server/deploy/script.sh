@@ -6,6 +6,7 @@ PROJECT="aio-test"
 DATABASE='aio'
 LOG="/var/log/$PROJECT-deploy.log"
 REPOSITORY="https://github.com/TeaTracer/$PROJECT.git"
+ENV=".venv/bin/activate"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
@@ -105,6 +106,24 @@ fix_python() {
     log sudo apt-get install python3.6 -y
 }
 
+test_virtualenv() {
+    if [ -f "$env" ]; then
+        . $ENV
+        local pip_python_version="$(pip -V | awk '{print substr($NF, 1, 3)}')"
+        if [ "$pip_python_version" = "3.6" ]; then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+fix_virtualenv() {
+    log python3.6 -m venv --without-pip .venv
+    . .venv/bin/activate
+    log curl "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
+    log python3.6 get-pip.py
+}
+
 test_postgres_ppa() {
     find /etc/apt/ -name *.list | xargs cat | grep "postgresql" > /dev/null
 }
@@ -131,6 +150,7 @@ ensure test_python_ppa fix_python_ppa "Python ppa installation"
 ensure test_postgres_ppa fix_postgres_ppa "Postgres ppa installation"
 update
 ensure test_python fix_python "Python 3.6 installation"
+ensure test_virtualenv fix_virtualenv "Virtualenv installation"
 ensure test_postgres fix_postgres "Postgres installation"
 ensure test_database fix_database "Database creation"
 
