@@ -1,11 +1,10 @@
 import React from 'react';
 
-export default class Test extends React.Component {
+export default class AioClient extends React.Component {
 
     constructor(props) {
         super(props);
         this.state = {
-            message_id: 0,
             data: undefined,
             is_error: false
         };
@@ -13,7 +12,7 @@ export default class Test extends React.Component {
 
     componentDidMount() {
         var ws = new WebSocket(this.props.server);
-        document.cookie = "token=SeCrEtToKen; path=/;";
+        document.cookie = "token=" + this.props.token + ";";
 
         ws.onmessage = (event) => {
             var data = JSON.parse(event.data);
@@ -23,13 +22,10 @@ export default class Test extends React.Component {
 
         var sendRequest = () => {
             var request = {
-                jsonrpc: "2.0",
-                id: this.state.message_id,
-                method: "ping",
-                params: undefined
+                method: "echo",
+                params: []
             };
             ws.send(JSON.stringify(request))
-            this.setState({"message_id": this.state.message_id + 1});
         }
 
         ws.onopen = () => {
@@ -45,7 +41,7 @@ export default class Test extends React.Component {
         return (
             <div>
                 <div> Test!!! </div>
-                <div> {!this.state.is_error ? this.state.message_id : 'ERROR!'} </div>
+                <div> {!this.state.is_error ? 'OK!' : 'ERROR!'} </div>
             </div>
         );
     }

@@ -107,7 +107,7 @@ class Manager(metaclass=ABCMeta):
             await metadata.create_all(engine)
 
 
-class RemoteManager:
+class RemoteManager(Manager):
     """ local manager with administrative functions """
 
     @property
@@ -118,6 +118,7 @@ class RemoteManager:
 
     async def get_menu(self):
         """ fetch all dishes from menu and the most actual tree id """
+
         async with create_engine(self.dsn) as engine:
             async with engine.acquire() as conn:
                 join = sa.join(dishes, menu, dishes.c.id == menu.c.dish)
@@ -127,12 +128,17 @@ class RemoteManager:
                 tree_id = await conn.execute(query).first()
                 return dishes_ids, tree_id
 
-    async def store_order(self, uid, tree_id, order):
-        pass
+    async def store_order(self, uid, tree_id, order, ordered_at):
+        """ store remote order """
+
+        values_dict = {'manager': uid,
+                       'tree': tree_id,
+                       'order': order,
+                       'ordered_at': ordered_at}
+        return await self._insert(orders, values_dict)
 
 
-
-class LocalManager:
+class LocalManager(Manager):
     """ local manager with administrative functions """
 
     @property
@@ -215,7 +221,18 @@ class LocalManager:
                        }
         return await self._insert(dishes, values_dict)
 
+    async def get_last_orders(self, n):
+        """ get list of last orders """
+
+        async with create_engine(self.dsn) as engine:
+            async with engine.acquire() as conn:
+                query = (users.select([orders]).order_by(orders.c.ordered_at))
+                orders_list = await conn.execute(query).fetchmany(n)
+                return orders_list
+
     async def get_starter_pack(self):
+        """ initial database data """
+
         admin = await self.create_local_user('admin', 'admin', name='Admin')
         admin_token = await self.create_token(admin)
         guest = await self.create_remote_user('guest', 'guest', name='Guest')

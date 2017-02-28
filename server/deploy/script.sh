@@ -2,6 +2,12 @@
 
 #####################################
 
+MY_PATH=$(pwd)
+SCRIPT_PATH=$( cd "$(dirname "$0")" ; pwd -P )
+cd "$MY_PATH"
+
+#####################################
+
 PROJECT="aio-test"
 DATABASE='aio'
 LOG="/var/log/$PROJECT-deploy.log"
@@ -10,6 +16,8 @@ ENV=".venv/bin/activate"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
+NGINX_FROM="${SCRIPT_PATH}/nginx.conf"
+NGINX_TO="/etc/nginx/sites-available/default"
 
 #####################################
 
@@ -76,7 +84,7 @@ test_postgres() {
 }
 
 fix_postgres() {
-    log sudo apt-get install -y postgresql-9.6 pgadmin3
+    log sudo apt-get install -y postgresql-9.6 pgadmin3 postgresql-server-dev-9.6
     log sudo pg_dropcluster --stop 9.6 main
     log sudo pg_createcluster --locale en_US.UTF-8 --start 9.6 main
     echo "postgres:postgres" | sudo chpasswd
@@ -103,11 +111,11 @@ test_python() {
 }
 
 fix_python() {
-    log sudo apt-get install python3.6 -y
+    log sudo apt-get install python3.6 python3.6-dev -y
 }
 
 test_virtualenv() {
-    if [ -f "$env" ]; then
+    if [ -f "$ENV" ]; then
         . $ENV
         local pip_python_version="$(pip -V | awk '{print substr($NF, 1, 3)}')"
         if [ "$pip_python_version" = "3.6" ]; then
@@ -123,6 +131,35 @@ fix_virtualenv() {
     log curl "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
     log python3.6 get-pip.py
     log rm get-pip.py
+}
+
+test_nginx() {
+    if [ -f $NGINX_FROM ] && \
+       [ -f $NGINX_TO ] && \
+       [ $(cmp -s $NGINX_FROM $NGINX_TO 2>/dev/null; echo $?) -eq 0 ] && \
+       [ $(sudo nginx -t 2> /dev/null; echo $?) -eq 0 ]; then
+        return 0
+    fi
+    return 1
+}
+
+fix_nginx() {
+    log sudo apt-get install nginx -y
+    log sudo cp $NGINX_FROM $NGINX_TO
+}
+
+test_ssl() {
+    if [ -f "/etc/ssl/server.crt" ] && \
+       [ -f "/etc/ssl/server.key" ] && \
+       [ $(openssl -h 2> /dev/null; echo $?) -eq 0 ]; then
+            return 0
+    fi
+    return 1
+}
+
+fix_ssl() {
+    (cd "$SCRIPT_PATH" && log sudo ./ssl.sh 2> /dev/null)
+    log sudo apt-get install openssl -y 2> /dev/null
 }
 
 test_postgres_ppa() {
@@ -152,6 +189,8 @@ ensure test_postgres_ppa fix_postgres_ppa "Postgres ppa installation"
 update
 ensure test_python fix_python "Python 3.6 installation"
 ensure test_virtualenv fix_virtualenv "Virtualenv installation"
+ensure test_nginx fix_nginx "Nginx installation"
+ensure test_ssl fix_ssl "SSL installation"
 ensure test_postgres fix_postgres "Postgres installation"
 ensure test_database fix_database "Database creation"
 

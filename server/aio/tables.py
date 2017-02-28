@@ -63,6 +63,7 @@ orders = sa.Table('orders', metadata,
                   sa.Column('tree', None,
                             sa.ForeignKey('trees.id')),
                   sa.Column('order', sa.JSON, nullable=False),
+                  sa.Column('ordered_at', sa.TIMESTAMP, nullable=False),
                   schema=schema)
 
 dishes = sa.Table('dishes', metadata,
