@@ -1,3 +1,5 @@
 aiohttp
 aiopg
 gunicorn
+sqlalchemy
+pyyaml

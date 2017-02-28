@@ -1,0 +1,65 @@
+html, body {
+  margin: 0;
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  display: flex;
+}
+
+#app {
+  width: 100%;
+  max-width: 300px;
+  margin: auto;
+  background-color: #6864ec;
+  padding: 20px;
+  font-family: sans-serif;
+  min-height: 220px;
+  color: white;
+  box-shadow: 0px 2px 8px 0px rgba(0,0,0,0.52);
+}
+
+h1 {
+  color: white;
+  text-align: center;
+}
+span {
+  font-weight: 600;
+}
+
+input[type=text], input[type=password] {
+  float: left;
+  width: 100%;
+  padding: 0 10px;
+  margin: 5px 0;
+  height: 50px;
+  box-sizing: border-box;
+  border: 0;
+  font-size:
+}
+
+input[type=text], input[type=password], button, p {
+  font-size: 16px;
+}
+
+button {
+  width: 100%;
+  float:left;
+  height: 50px;
+  margin: 5px 0;
+  border: 0;
+  cursor: pointer;
+  font-weight: 600;
+  background-color: #2f2f2f;
+  color: white;
+}
+
+#error {
+  font-weight: 600;
+  color: #f18484;
+  text-align: center;
+  margin: 15px 0 0;
+  float: left;
+  width: 100%;
+}

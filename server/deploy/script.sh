@@ -88,6 +88,14 @@ fix_postgres() {
     log sudo pg_dropcluster --stop 9.6 main
     log sudo pg_createcluster --locale en_US.UTF-8 --start 9.6 main
     echo "postgres:postgres" | sudo chpasswd
+    sudo -u postgres createuser -a -s -d admin
+    sudo -u postgres psql -c "alter user \"admin\" with password 'admin';"
+    sudo -u postgres psql -c "grant all privileges on database aio to admin;"
+    sudo -u postgres psql -c "create database aio"
+    sudo -u postgres psql -c "create schema aio;"
+    sudo -u postgres psql -c "revoke all on schema public from public;"
+    sudo sed -i.bak 's/^\(local\ *all\ *postgres\ *\)peer$/\1md5/' /etc/postgresql/9.6/main/pg_hba.conf
+
 }
 
 test_database() {

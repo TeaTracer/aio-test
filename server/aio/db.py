@@ -44,7 +44,7 @@ class Manager(metaclass=ABCMeta):
     def dsn(self):
         """ data source name """
 
-        return  f'dbmane={dbname} user={dbuser} password={dbpassword} host={host} port={port}'
+        return  f'dbname={dbname} user={dbuser} password={dbpassword} host={host} port={port}'
 
     @property
     @abstractmethod
@@ -154,17 +154,17 @@ class LocalManager(Manager):
         user_dict = {'login': login, 'salt': salt, 'password': hashpass}
         async with create_engine(self.dsn) as engine:
             async with engine.acquire() as conn:
-                trans = yield from conn.begin()
+                trans = await conn.begin()
                 uid = await conn.scalar(users.insert().values(**user_dict))
                 if not uid:
-                    yield from trans.rollback()
+                    await trans.rollback()
                 else:
                     user_table_dict = {'user': uid, **user_data}
                     uid = await conn.scalar(user_table.insert().values(**user_table_dict))
                     if not uid:
-                        yield from trans.rollback()
+                        await trans.rollback()
                     else:
-                        yield from trans.commit()
+                        await trans.commit()
                         return uid
 
     async def create_local_user(self, login, password, **user_data):
