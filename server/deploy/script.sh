@@ -90,9 +90,9 @@ fix_postgres() {
     echo "postgres:postgres" | sudo chpasswd
     sudo -u postgres createuser -a -s -d admin
     sudo -u postgres psql -c "alter user \"admin\" with password 'admin';"
-    sudo -u postgres psql -c "grant all privileges on database aio to admin;"
     sudo -u postgres psql -c "create database aio"
     sudo -u postgres psql -c "create schema aio;"
+    sudo -u postgres psql -c "grant all privileges on database aio to admin;"
     sudo -u postgres psql -c "revoke all on schema public from public;"
     sudo sed -i.bak 's/^\(local\ *all\ *postgres\ *\)peer$/\1md5/' /etc/postgresql/9.6/main/pg_hba.conf
 
@@ -197,8 +197,8 @@ ensure test_postgres_ppa fix_postgres_ppa "Postgres ppa installation"
 update
 ensure test_python fix_python "Python 3.6 installation"
 ensure test_virtualenv fix_virtualenv "Virtualenv installation"
-ensure test_nginx fix_nginx "Nginx installation"
 ensure test_ssl fix_ssl "SSL installation"
+ensure test_nginx fix_nginx "Nginx installation"
 ensure test_postgres fix_postgres "Postgres installation"
 ensure test_database fix_database "Database creation"
 
