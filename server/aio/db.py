@@ -2,19 +2,37 @@ import asyncio
 from typing import Dict
 from abc import ABCMeta, abstractmethod
 from aiopg.sa import create_engine
+import secrets
+import hashlib
 
-from .tables import remote_managers, local_managers, restaurants, \
-                    orders, dishes, menu, categories, trees
+from .settings import settings
+from .tables import (metadata, remote_managers, local_managers, restaurants,
+                     orders, dishes, menu, categories, trees)
 
+dbname = settings["database"]["dbname"]
+host = settings["database"]["host"]
+port = settings["database"]["port"] # 1235
+
+dbuser = os.environ["DBUSER"]
+dbpassword = os.environ["DBPASSWORD"]
+
+def hashpass(password, bsalt=None):
+    if salt is None:
+        bsalt = secrets.token_hex(32).encode()
+    bpassword = password.encode()
+    bhash = binascii.hexlify(hashlib.pbkdf2_hmac("sha256", bpass, bsalt, 10000))
+    return bsalt, bhash
 
 class Manager(metaclass=ABCMeta):
     @property
-    @abstractmethod
     def dsn(self):
         """ data source name """
-        pass
+        dsn = f'dbmane={dbname} user={dbuser} password={dbpassword} host={host} port={port}'
 
-    async def _verify(self, login, password):
+    @classmethod
+    @abstractmethod
+    async def verify(self, login, password):
+        """ verify login and password """
         pass
 
     async def _insert(self, table, values_dict):
@@ -25,17 +43,20 @@ class Manager(metaclass=ABCMeta):
                 uid = await conn.scalar(table.insert().values(**values_dict))
                 return uid
 
+    async def create_all(self, metadata):
+        """ one value insertion to table """
+
+        async with create_engine(self.dsn) as engine:
+            await metadata.create_all(engine)
+
 
 class RemoteManager:
     """ local manager with administrative functions """
-
-    dsn = 'dbname=aio user=manager password=manager host=127.0.0.1 port=1235'
+    pass
 
 
 class LocalManager:
     """ local manager with administrative functions """
-
-    dsn = 'dbname=aio user=manager password=manager host=127.0.0.1 port=1235'
 
     async def add_local_manager(self,
                                 name: str):
@@ -92,7 +113,3 @@ class LocalManager:
         tree = await self.add_tree({category: None}, manager)
         dish = await self.add_dish('Apple', 'Fresh apple.',
                                    1.0, category, tree, manager)
-
-
-def go():
-    asyncio.get_event_loop().run_until_complete(LocalManager().go())
