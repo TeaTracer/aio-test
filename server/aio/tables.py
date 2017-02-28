@@ -11,21 +11,34 @@ import sqlalchemy as sa
 from .settings import settings
 
 metadata = sa.MetaData()
-schema = settings["database"]["schema"]
-n = settings["database"]["string_len"]  # postgres VARCHAR(n)
-acc = settings["database"]["currencyacc"]  # postgres NUMERIC(precision, scale) for currency
-#  schema = 'aio'
-#  n = 100  # postgres VARCHAR(n)
-#  acc = 10, 2  # postgres NUMERIC(precision, scale) for currency
+
+db = settings["database"]
+n = db["string_len"]
+acc = db["currency_acc"]
+schema = db["schema"]
+hash_n = db["hash_len"]
+salt_n = db["salt_len"]
+token_n = db["token_len"]
+
+tokens = sa.Table('tokens', metadata,
+                  sa.Column('token', sa.String(token_n), nullable=False),
+                  sa.Column('user', None,
+                             sa.ForeignKey('users.id')),
+                  sa.Column('inserted_at', sa.TIMESTAMP,
+                            default=sa.func.current_timestamp(), nullable=False),
+                  schema=schema)
 
 users = sa.Table('users', metadata,
                  sa.Column('id', sa.Integer, primary_key=True),
                  sa.Column('login', sa.String(n), nullable=False),
-                 sa.Column('login', sa.String(n), nullable=False),
+                 sa.Column('password', sa.String(hash_n), nullable=False),
+                 sa.Column('salt', sa.String(salt_n), nullable=False),
                  schema=schema)
 
 remote_managers = sa.Table('remote_managers', metadata,
                            sa.Column('id', sa.Integer, primary_key=True),
+                           sa.Column('user', None,
+                                      sa.ForeignKey('users.id')),
                            sa.Column('name', sa.String(n), nullable=False),
                            sa.Column('restaurant', None,
                                      sa.ForeignKey('restaurants.id')),
@@ -33,6 +46,8 @@ remote_managers = sa.Table('remote_managers', metadata,
 
 local_managers = sa.Table('local_managers', metadata,
                           sa.Column('id', sa.Integer, primary_key=True),
+                          sa.Column('user', None,
+                                     sa.ForeignKey('users.id')),
                           sa.Column('name', sa.String(n), nullable=False),
                           schema=schema)
 
@@ -61,7 +76,8 @@ dishes = sa.Table('dishes', metadata,
                             sa.ForeignKey('categories.id')),
                   sa.Column('tree', None,
                             sa.ForeignKey('trees.id')),
-                  sa.Column('changed_at', sa.TIMESTAMP, nullable=False),
+                  sa.Column('changed_at', sa.TIMESTAMP,
+                            default=sa.func.current_timestamp(), nullable=False),
                   sa.Column('changed_by', None,
                             sa.ForeignKey('local_managers.id')),
                   schema=schema)
@@ -79,7 +95,8 @@ menu = sa.Table('menu', metadata,
 categories = sa.Table('categories', metadata,
                       sa.Column('id', sa.Integer, primary_key=True),
                       sa.Column('name', sa.String(n), nullable=False),
-                      sa.Column('changed_at', sa.TIMESTAMP, nullable=False),
+                      sa.Column('changed_at', sa.TIMESTAMP,
+                                default=sa.func.current_timestamp(), nullable=False),
                       sa.Column('changed_by', None,
                                 sa.ForeignKey('local_managers.id')),
                       schema=schema)
@@ -87,7 +104,8 @@ categories = sa.Table('categories', metadata,
 trees = sa.Table('trees', metadata,
                  sa.Column('id', sa.Integer, primary_key=True),
                  sa.Column('tree', sa.JSON, nullable=False),
-                 sa.Column('changed_at', sa.TIMESTAMP, nullable=False),
+                 sa.Column('changed_at', sa.TIMESTAMP,
+                           default=sa.func.current_timestamp(), nullable=False),
                  sa.Column('changed_by', None,
                            sa.ForeignKey('local_managers.id')),
                  schema=schema)
