@@ -156,6 +156,14 @@ fix_nginx() {
     log sudo cp $NGINX_FROM $NGINX_TO
 }
 
+test_gcc() {
+    hash gcc 2> /dev/null
+}
+
+fix_gcc() {
+    log sudo apt-get install gcc -y
+}
+
 test_ssl() {
     if [ -f "/etc/ssl/server.crt" ] && \
        [ -f "/etc/ssl/server.key" ] && \
@@ -199,6 +207,7 @@ ensure test_python fix_python "Python 3.6 installation"
 ensure test_virtualenv fix_virtualenv "Virtualenv installation"
 ensure test_ssl fix_ssl "SSL installation"
 ensure test_nginx fix_nginx "Nginx installation"
+ensure test_gcc fix_gcc "GCC installation"
 ensure test_postgres fix_postgres "Postgres installation"
 ensure test_database fix_database "Database creation"
 
