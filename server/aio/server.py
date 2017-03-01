@@ -27,12 +27,7 @@ async def get_user(request, User):
 
 async def login_handler(request):
     if request.method == "OPTIONS":
-        headers = {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Credentials': 'true',
-                'Access-Control-Allow-Headers': 'login,password',
-                'Access-Control-Allow-Methods': 'GET',
-                }
+        print("OPTIONS")
         return web.Response()
 
 
@@ -55,7 +50,10 @@ async def login_handler(request):
 
     response_data = {"token": token}
     print(response_data)
-    return web.json_response(response_data)
+    headers = {
+            'Access-Control-Allow-Origin': '*',
+            }
+    return web.json_response(response_data, headers=headers)
 
 async def websocket_remote_handler(request):
     print('REMOTE', request)
