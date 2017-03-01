@@ -14,6 +14,8 @@ from .settings import settings
 from .tables import (metadata, remote_managers, local_managers, restaurants,
                      users, tokens, orders, dishes, menu, categories, trees)
 
+tables = (users, tokens, remote_managers, local_managers, restaurants,
+          orders, dishes, menu, categories, trees)
 db = settings["database"]
 dbname = db["dbname"]
 host = db["host"]
@@ -104,7 +106,10 @@ class Manager(metaclass=ABCMeta):
         """ one value insertion to table """
 
         async with create_engine(self.dsn) as engine:
-            await metadata.create_all(engine)
+            async with engine.acquire() as conn:
+                for table in tables:
+                    create_expr = sa.schema.CreateTable(table)
+                    await conn.execute(create_expr)
 
 
 class RemoteManager(Manager):

@@ -101,6 +101,7 @@ async def websocket_local_handler(request):
     return ws
 
 loop = asyncio.get_event_loop()
+loop.run_until_complete(LocalManager().create_all())
 loop.run_until_complete(LocalManager().get_starter_pack())
 app = aiohttp.web.Application(loop=loop)
 app.router.add_route('*', '/remote', websocket_remote_handler)

@@ -4,4 +4,4 @@ gunicorn \
     --worker-class aiohttp.worker.GunicornWebWorker \
     --certfile /etc/ssl/server.crt \
     --keyfile /etc/ssl/server.key \
-    --timeout 120
+    --timeout 10
