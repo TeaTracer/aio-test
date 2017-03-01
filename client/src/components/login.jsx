@@ -49,6 +49,9 @@ export default class LoginComponent extends React.Component {
   }
 
   logOut() {
+    this.setState({
+        loggedIn: false
+    });
   }
 
   passInput(state, e) {
