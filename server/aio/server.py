@@ -12,11 +12,13 @@ async def get_user(request, User):
     user = None
     if hasattr(request, 'cookies'):
         token = request.cookies.get("token", None)
+        print(token)
         if not token:
             print("Cookies without token field")
             raise HTTPForbidden()
         manager = User()
         user = await manager.verify_token(token)
+        print(user)
         if not user:
             print("Wrong token")
             raise HTTPForbidden()
@@ -26,34 +28,35 @@ async def get_user(request, User):
     return user
 
 async def login_handler(request):
-    if request.method == "OPTIONS":
-        print("OPTIONS")
-        return web.Response()
+    """ handler for get login requests, respond with session token or HTTPForbidden """
 
+    try:
+        if request.method == "OPTIONS":
+            print("OPTIONS")
+            return web.Response()
 
-    print('LOGIN', request)
-    print(request.headers)
-    login = request.headers['login']
-    password = request.headers['password']
-    manager = RemoteManager()
-    print(manager)
-    uid = await manager.verify_credentials(login, password)
-    print(uid)
-    if not uid:
-            print("Wrong credentials")
-            raise HTTPForbidden()
-    token = await manager.create_token(uid)
-    print(token)
-    if not token:
-            print("Wrong token creation")
-            raise HTTPForbidden()
+        print(request)
+        login = request.headers['login']
+        password = request.headers['password']
+        manager = RemoteManager()
+        uid = await manager.verify_credentials(login, password)
+        if not uid:
+                print("Wrong credentials")
+                raise HTTPForbidden()
+        token = await manager.create_token(uid)
+        if not token:
+                print("Wrong token creation")
+                raise HTTPForbidden()
 
-    response_data = {"token": token}
-    print(response_data)
-    headers = {
-            'Access-Control-Allow-Origin': '*',
-            }
-    return web.json_response(response_data, headers=headers)
+        response_data = {"token": token}
+        headers = {'Access-Control-Allow-Origin': '*'}
+        response = web.json_response(response_data, headers=headers)
+
+    except Exception as err:
+        print(err)
+        raise HTTPForbidden()
+
+    return response
 
 async def websocket_remote_handler(request):
     print('REMOTE', request)

@@ -11,6 +11,7 @@ export default class LoginComponent extends React.Component {
       pw: '',
       token: '',
       error: '',
+      expires: ''
     }
   }
 
@@ -26,6 +27,7 @@ export default class LoginComponent extends React.Component {
                 console.log(data)
                 this.setState({
                     token: data.token,
+                    expires: 'expires_data',
                     loggedIn: true,
                     error: ''
                 });
@@ -50,6 +52,7 @@ export default class LoginComponent extends React.Component {
       // $.post(this.props.url, data).done(function(data) {
         // this.setState({
           // token: data.results.token,
+          // expires: data.results.expire_at,
           // loggedIn: true,
           // error: ''
         // });
@@ -73,7 +76,7 @@ export default class LoginComponent extends React.Component {
     return (
       <div>
         <h1>React Login</h1>
-        { this.state.loggedIn ? <LoginDetails server={this.props.server} token={this.state.token} user={this.state.username} logout={this.logOut.bind(this)}/> : <Form change={this.passInput.bind(this)} submit={this.handleSubmit.bind(this)} user={this.state.username} pw={this.state.pw} error={this.state.error} /> }
+        { this.state.loggedIn ? <LoginDetails server={this.props.server} token={this.state.token} user={this.state.username} expires={this.state.expires} logout={this.logOut.bind(this)}/> : <Form change={this.passInput.bind(this)} submit={this.handleSubmit.bind(this)} user={this.state.username} pw={this.state.pw} error={this.state.error} /> }
       </div>
     )
   }
@@ -85,6 +88,7 @@ class LoginDetails extends React.Component {
       <div>
         <p><span>Username:</span> {this.props.user}</p>
         <p><span>Token:</span> {this.props.token}</p>
+        <p><span>Expires at:</span> {this.props.expires}</p>
         <button onClick={this.props.logout}>Logout</button>
         <AioClient server={this.props.server} />
       </div>

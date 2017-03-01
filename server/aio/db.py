@@ -50,7 +50,6 @@ def hashpass(password, salt=None, dklen=dklen, salt_n=salt_n, iterations=10000):
         bhash = binascii.hexlify(
                     hashlib.pbkdf2_hmac("sha256", bpassword, salt,
                                         iterations, dklen=dklen))
-        print('HP', bpassword, salt, bhash)
     except Exception as err:
         print(err)
     return salt, bhash
@@ -81,7 +80,6 @@ class Manager(metaclass=ABCMeta):
                 SELECT id, password, salt
                 FROM aio.users
                 WHERE aio.users.login = '{login}'"""
-                        print(query)
                         await cur.execute(query)
                         async for user_id, user_password, user_salt in cur:
                             _, test_hash = hashpass(password, user_salt)
@@ -283,6 +281,4 @@ class LocalManager(Manager):
         green_tea_tasks = [init_dish(f"green_{i}", green_tea) for i in range(10)]
         white_tea_tasks = [init_dish(f"white_{i}", white_tea) for i in range(10)]
         dish_tasks = green_tea_tasks + white_tea_tasks
-        #  g = asyncio.gather(dish_tasks)
-        #  gg = await g
         await asyncio.wait(dish_tasks)
