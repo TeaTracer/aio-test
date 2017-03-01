@@ -11,11 +11,18 @@ import secrets
 import hashlib
 
 from .settings import settings
-from .tables import (metadata, remote_managers, local_managers, restaurants,
-                     users, tokens, orders, dishes, menu, categories, trees)
+from .tables import (metadata, remote_managers, local_managers, categories, restaurants,
+                     users, tokens, trees, orders, dishes, menu,
+                     create_table_remote_managers, create_table_local_managers,
+                     create_table_categories, create_table_restaurants,
+                     create_table_users, create_table_tokens, create_table_trees,
+                     create_table_orders, create_table_dishes, create_table_menu)
 
-tables = (users, tokens, remote_managers, local_managers, restaurants,
-          orders, dishes, menu, categories, trees)
+create_tables = (create_table_users, create_table_tokens,
+                 create_table_remote_managers, create_table_local_managers,
+                 create_table_categories, create_table_restaurants, create_table_trees, create_table_orders,
+                 create_table_dishes, create_table_menu)
+
 db = settings["database"]
 dbname = db["dbname"]
 host = db["host"]
@@ -61,7 +68,7 @@ class Manager(metaclass=ABCMeta):
 
         async with create_engine(self.dsn) as engine:
             async with engine.acquire() as conn:
-                join = sa.join(self.user_table, users, self.user_table.c.user == users.c.id)
+                join = sa.join(self.user_table, users, self.user_table.c.user_id == users.c.id)
                 query = (users.select([self.user_table.c.id, users])
                          .select_from(join)
                          .where(users.c.login == login))
@@ -74,7 +81,7 @@ class Manager(metaclass=ABCMeta):
         """ get session token by user id """
 
         token = hashtoken()
-        values_dict = {'token': token, 'user': uid}
+        values_dict = {'token': token, 'user_id': uid}
         tid = await self._insert(tokens, values_dict)
         if not tid:
             raise Exception("wrong token insertion")
@@ -85,7 +92,7 @@ class Manager(metaclass=ABCMeta):
 
         async with create_engine(self.dsn) as engine:
             async with engine.acquire() as conn:
-                join = sa.join(self.user_table, tokens, self.user_table.c.id == tokens.c.user)
+                join = sa.join(self.user_table, tokens, self.user_table.c.id == tokens.c.user_id)
                 query = (users.select([self.user_table.c.id, tokens])
                          .select_from(join)
                          .where(tokens.c.token == token))
@@ -107,9 +114,8 @@ class Manager(metaclass=ABCMeta):
 
         async with create_engine(self.dsn) as engine:
             async with engine.acquire() as conn:
-                for table in tables:
-                    create_expr = sa.schema.CreateTable(table)
-                    await conn.execute(create_expr)
+                for create_table in create_tables:
+                    await create_table(conn)
 
 
 class RemoteManager(Manager):
@@ -138,7 +144,7 @@ class RemoteManager(Manager):
 
         values_dict = {'manager': uid,
                        'tree': tree_id,
-                       'order': order,
+                       'order_data': order,
                        'ordered_at': ordered_at}
         return await self._insert(orders, values_dict)
 

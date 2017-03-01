@@ -10,6 +10,9 @@ cd "$MY_PATH"
 
 PROJECT="aio-test"
 DATABASE='aio'
+SCHEMA='aio'
+DBUSER='admin'
+DBPASSWORD='admin'
 LOG="/var/log/$PROJECT-deploy.log"
 REPOSITORY="https://github.com/TeaTracer/$PROJECT.git"
 ENV=".venv/bin/activate"
@@ -93,17 +96,18 @@ fix_postgres() {
 }
 
 test_database() {
-    sudo -u postgres psql -d aio -v ON_ERROR_STOP=1 -c "select 2+2;" > /dev/null 2>&1
+    sudo -u postgres psql -q -d $DATABASE -v ON_ERROR_STOP=1 -c "select 2+2;" > /dev/null 2>&1
+    sudo -u postgres psql $DATABASE -c "select schema_name from information_schema.schemata;" | grep $SCHEMA 2> /dev/null 1>&2
+
 }
 
 fix_database() {
-    log sudo -u postgres psql -v ON_ERROR_STOP=1  -c "create database $DATABASE;"
-    log sudo -u postgres createuser -a -s -d admin
-    log sudo -u postgres psql $DATABASE -q -c "alter user \"admin\" with password 'admin';"
-    log sudo -u postgres psql $DATABASE -q -c "create database aio"
-    log sudo -u postgres psql $DATABASE -q -c "create schema aio;"
-    log sudo -u postgres psql $DATABASE -q -c "grant all privileges on database aio to admin;"
-    log sudo -u postgres psql $DATABASE -q -c "revoke all on schema public from public;"
+    log sudo -u postgres createuser -a -s -d $DBUSER 2> /dev/null
+    log sudo -u postgres psql -q -c "alter user \"$DBUSER\" with password '$DBPASSWORD';" 2> /dev/null
+    log sudo -u postgres psql -q -c "create database $DATABASE" 2> /dev/null
+    log sudo -u postgres psql $DATABASE -q -c "create schema $SCHEMA;" 2> /dev/null
+    log sudo -u postgres psql -q -c "grant all privileges on database $DATABASE to $DBUSER;" 2> /dev/null
+    log sudo -u postgres psql -q -c "revoke all on schema public from public;" 2> /dev/null
 }
 
 test_python_ppa() {
