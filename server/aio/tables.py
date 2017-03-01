@@ -28,7 +28,7 @@ users = sa.Table('users', metadata,
                  schema=schema)
 
 async def create_table_users(conn):
-    await conn.execute(f'''CREATE TABLE IF NOT EXISTS users (
+    await conn.execute(f'''CREATE TABLE IF NOT EXISTS {schema}.users (
                                         id serial PRIMARY KEY,
                                         login varchar({n}) not null,
                                         password varchar({hash_n}) not null,
@@ -44,9 +44,9 @@ tokens = sa.Table('tokens', metadata,
                   schema=schema)
 
 async def create_table_tokens(conn):
-    await conn.execute(f'''CREATE TABLE IF NOT EXISTS tokens (
+    await conn.execute(f'''CREATE TABLE IF NOT EXISTS {schema}.tokens (
                                         token varchar({token_n}) not null,
-                                        user_id int references users(id),
+                                        user_id int references {schema}.users(id),
                                         inserted_at timestamp default current_timestamp
                                         )''')
 
@@ -61,9 +61,9 @@ remote_managers = sa.Table('remote_managers', metadata,
                            schema=schema)
 
 async def create_table_remote_managers(conn):
-    await conn.execute(f'''CREATE TABLE IF NOT EXISTS remote_managers (
+    await conn.execute(f'''CREATE TABLE IF NOT EXISTS {schema}.remote_managers (
                                         id serial PRIMARY KEY,
-                                        user_id int references users(id),
+                                        user_id int references {schema}.users(id),
                                         name varchar({n}) not null
                                         )''')
 
@@ -75,9 +75,9 @@ local_managers = sa.Table('local_managers', metadata,
                           schema=schema)
 
 async def create_table_local_managers(conn):
-    await conn.execute(f'''CREATE TABLE IF NOT EXISTS local_managers (
+    await conn.execute(f'''CREATE TABLE IF NOT EXISTS {schema}.local_managers (
                                         id serial PRIMARY KEY,
-                                        user_id int references users(id),
+                                        user_id int references {schema}.users(id),
                                         name varchar({n}) not null
                                         )''')
 
@@ -91,11 +91,11 @@ categories = sa.Table('categories', metadata,
                       schema=schema)
 
 async def create_table_categories(conn):
-    await conn.execute(f'''CREATE TABLE IF NOT EXISTS categories (
+    await conn.execute(f'''CREATE TABLE IF NOT EXISTS {schema}.categories (
                                         id serial PRIMARY KEY,
                                         name varchar({n}) not null,
                                         changed_at timestamp default current_timestamp,
-                                        changed_by int references local_managers(id)
+                                        changed_by int references {schema}.local_managers(id)
                                         )''')
 
 restaurants = sa.Table('restaurants', metadata,
@@ -104,7 +104,7 @@ restaurants = sa.Table('restaurants', metadata,
                        schema=schema)
 
 async def create_table_restaurants(conn):
-    await conn.execute(f'''CREATE TABLE IF NOT EXISTS restaurants (
+    await conn.execute(f'''CREATE TABLE IF NOT EXISTS {schema}.restaurants (
                                         id serial PRIMARY KEY,
                                         name varchar({n}) not null
                                         )''')
@@ -119,11 +119,11 @@ trees = sa.Table('trees', metadata,
                  schema=schema)
 
 async def create_table_trees(conn):
-    await conn.execute(f'''CREATE TABLE IF NOT EXISTS trees (
+    await conn.execute(f'''CREATE TABLE IF NOT EXISTS {schema}.trees (
                                         id serial PRIMARY KEY,
                                         tree json not null,
                                         changed_at timestamp default current_timestamp,
-                                        changed_by int references local_managers(id)
+                                        changed_by int references {schema}.local_managers(id)
                                         )''')
 
 orders = sa.Table('orders', metadata,
@@ -137,10 +137,10 @@ orders = sa.Table('orders', metadata,
                   schema=schema)
 
 async def create_table_orders(conn):
-    await conn.execute(f'''CREATE TABLE IF NOT EXISTS orders (
+    await conn.execute(f'''CREATE TABLE IF NOT EXISTS {schema}.orders (
                                         id serial PRIMARY KEY,
-                                        manager int references remote_managers(id),
-                                        tree int references trees(id),
+                                        manager int references {schema}.remote_managers(id),
+                                        tree int references {schema}.trees(id),
                                         order_data json not null,
                                         ordered_at timestamp not null
                                         )''')
@@ -163,14 +163,14 @@ dishes = sa.Table('dishes', metadata,
                   schema=schema)
 
 async def create_table_dishes(conn):
-    await conn.execute(f'''CREATE TABLE IF NOT EXISTS dishes (
+    await conn.execute(f'''CREATE TABLE IF NOT EXISTS {schema}.dishes (
                                         id serial PRIMARY KEY,
                                         name varchar({n}) not null,
                                         discription text not null,
                                         price numeric({acc[0]}, {acc[1]}) not null,
-                                        category int references categories(id),
+                                        category int references {schema}.categories(id),
                                         changed_at timestamp default current_timestamp,
-                                        changed_by int references local_managers(id)
+                                        changed_by int references {schema}.local_managers(id)
                                         )''')
 
 menu = sa.Table('menu', metadata,
@@ -184,7 +184,7 @@ menu = sa.Table('menu', metadata,
                 schema=schema)
 
 async def create_table_menu(conn):
-    await conn.execute(f'''CREATE TABLE IF NOT EXISTS menu (
-                                        dish int references dishes(id)
+    await conn.execute(f'''CREATE TABLE IF NOT EXISTS {schema}.menu (
+                                        dish int references {schema}.dishes(id)
                                         )''')
 

@@ -92,6 +92,7 @@ fix_postgres() {
     log sudo pg_createcluster --locale en_US.UTF-8 --start 9.6 main
     echo "postgres:postgres" | sudo chpasswd
     log sudo sed -i.bak 's/^\(local\ *all\ *postgres\ *\)peer$/\1md5/' /etc/postgresql/9.6/main/pg_hba.conf
+    log sudo service postgresql restart
 
 }
 

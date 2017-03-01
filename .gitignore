@@ -1,4 +1,5 @@
 ### Aio pattens ###
+*/node_modules/*
 
 # Vagrant
 .vagrant/

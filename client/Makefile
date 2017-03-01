@@ -8,9 +8,7 @@ dev: static
 	npm run dev
 
 static:
-	@if [ ! -f "dist/index.html" ]; then \
-	   	mkdir -p "dist" && cp "src/index.html" "dist/index.html" && echo "Copy static files"; \
-	fi
+	./collect_static.sh
 
 clean:
 	rm -rf dist/*

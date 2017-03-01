@@ -26,23 +26,39 @@ async def get_user(request, User):
     return user
 
 async def login_handler(request):
-    data = await request.post()
-    login = data['login']
-    password = data['password']
+    if request.method == "OPTIONS":
+        headers = {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Credentials': 'true',
+                'Access-Control-Allow-Headers': 'login,password',
+                'Access-Control-Allow-Methods': 'GET',
+                }
+        return web.Response()
+
+
+    print('LOGIN', request)
+    print(request.headers)
+    login = request.headers['login']
+    password = request.headers['password']
     manager = RemoteManager()
+    print(manager)
     uid = await manager.verify_credentials(login, password)
+    print(uid)
     if not uid:
             print("Wrong credentials")
             raise HTTPForbidden()
     token = await manager.create_token(uid)
+    print(token)
     if not token:
             print("Wrong token creation")
             raise HTTPForbidden()
 
     response_data = {"token": token}
+    print(response_data)
     return web.json_response(response_data)
 
 async def websocket_remote_handler(request):
+    print('REMOTE', request)
     user = await get_user(request, RemoteManager)
 
     ws = web.WebSocketResponse()
@@ -74,6 +90,7 @@ async def websocket_remote_handler(request):
     return ws
 
 async def websocket_local_handler(request):
+    print('LOCAL', request)
     user = await get_user(request, LocalManager)
 
     ws = web.WebSocketResponse()
@@ -110,16 +127,16 @@ async def on_startup(app):
     await manager.get_starter_pack()
 
 def hello_handler(request):
-    print(request)
+    print("HELLO", request)
     return web.Response(text="Hello, world!\n")
 
 async def init(loop):
     app = web.Application(loop=loop)
     aiohttp_debugtoolbar.setup(app)
-    app.on_startup.append(on_startup)
-    app.router.add_route('*', '/remote', websocket_remote_handler)
-    app.router.add_route('*', '/local', websocket_local_handler)
-    app.router.add_route('*', '/login', login_handler)
+    #  await on_startup(app)
+    app.router.add_route('*', '/api/remote', websocket_remote_handler)
+    app.router.add_route('*', '/api/local', websocket_local_handler)
+    app.router.add_route('*', '/login/', login_handler)
     app.router.add_route('*', '/', hello_handler)
     handler = app.make_handler()
     srv = await loop.create_server(handler, '0.0.0.0', 8080)

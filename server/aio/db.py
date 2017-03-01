@@ -1,4 +1,5 @@
 import asyncio
+import aiopg
 import os
 import binascii
 from typing import Dict
@@ -40,12 +41,18 @@ def hashtoken(token_n=token_n):
     return btoken
 
 def hashpass(password, salt=None, dklen=dklen, salt_n=salt_n, iterations=10000):
-    if salt is None:
-        salt = secrets.token_hex(salt_n).encode()
-    bpassword = password.encode()
-    bhash = binascii.hexlify(
-                hashlib.pbkdf2_hmac("sha256", bpassword, salt,
-                                    iterations, dklen=dklen))
+    try:
+        if salt is None:
+            salt = secrets.token_hex(salt_n).encode()
+        else:
+            salt = salt.encode()
+        bpassword = password.encode()
+        bhash = binascii.hexlify(
+                    hashlib.pbkdf2_hmac("sha256", bpassword, salt,
+                                        iterations, dklen=dklen))
+        print('HP', bpassword, salt, bhash)
+    except Exception as err:
+        print(err)
     return salt, bhash
 
 class Manager(metaclass=ABCMeta):
@@ -66,25 +73,32 @@ class Manager(metaclass=ABCMeta):
     async def verify_credentials(self, login, password):
         """ verify login and password """
 
-        async with create_engine(self.dsn) as engine:
-            async with engine.acquire() as conn:
-                join = sa.join(self.user_table, users, self.user_table.c.user_id == users.c.id)
-                query = (users.select([self.user_table.c.id, users])
-                         .select_from(join)
-                         .where(users.c.login == login))
-                async for uid, user in conn.execute(query):
-                    test_hash = hashpass(password, user.salt)
-                    if test_hash == user.password:
-                        return uid
+        try:
+            async with aiopg.create_pool(self.dsn) as pool:
+                async with pool.acquire() as conn:
+                    async with conn.cursor() as cur:
+                        query = f"""
+                SELECT id, password, salt
+                FROM aio.users
+                WHERE aio.users.login = '{login}'"""
+                        print(query)
+                        await cur.execute(query)
+                        async for user_id, user_password, user_salt in cur:
+                            _, test_hash = hashpass(password, user_salt)
+                            if test_hash.decode() == user_password:
+                                return user_id
+        except Exception as err:
+            print(err)
+            raise HTTPForbidden()
 
     async def create_token(self, uid):
         """ get session token by user id """
 
-        token = hashtoken()
+        token = hashtoken().decode()
         values_dict = {'token': token, 'user_id': uid}
-        tid = await self._insert(tokens, values_dict)
-        if not tid:
-            raise Exception("wrong token insertion")
+        async with create_engine(self.dsn) as engine:
+            async with engine.acquire() as conn:
+                await conn.execute(tokens.insert().values(**values_dict))
         return token
 
     async def verify_token(self, token):
@@ -93,7 +107,7 @@ class Manager(metaclass=ABCMeta):
         async with create_engine(self.dsn) as engine:
             async with engine.acquire() as conn:
                 join = sa.join(self.user_table, tokens, self.user_table.c.id == tokens.c.user_id)
-                query = (users.select([self.user_table.c.id, tokens])
+                query = (sa.select([self.user_table.c.id, tokens])
                          .select_from(join)
                          .where(tokens.c.token == token))
                 async for uid, token in conn.execute(query):
@@ -106,7 +120,11 @@ class Manager(metaclass=ABCMeta):
 
         async with create_engine(self.dsn) as engine:
             async with engine.acquire() as conn:
-                uid = await conn.scalar(table.insert().values(**values_dict))
+                uid = None
+                try:
+                    uid = await conn.scalar(table.insert().values(**values_dict))
+                except Exception as err:
+                    print(err)
                 return uid
 
     async def create_all(self):
@@ -133,9 +151,9 @@ class RemoteManager(Manager):
         async with create_engine(self.dsn) as engine:
             async with engine.acquire() as conn:
                 join = sa.join(dishes, menu, dishes.c.id == menu.c.dish)
-                query = (users.select([dishes]).select_from(join))
+                query = (sa.select([dishes]).select_from(join))
                 dishes_ids = await conn.execute(query).fetchall()
-                query = (trees.select([trees.c.id]).order_by(trees.c.id))
+                query = (sa.select([trees.c.id]).order_by(trees.c.id))
                 tree_id = await conn.execute(query).first()
                 return dishes_ids, tree_id
 
@@ -162,16 +180,18 @@ class LocalManager(Manager):
         """ create new users """
 
         salt, hashed_pass = hashpass(password)
-        user_dict = {'login': login, 'salt': salt, 'password': hashpass}
+        user_dict = {'login': login, 'salt': salt.decode(), 'password': hashed_pass.decode()}
         async with create_engine(self.dsn) as engine:
             async with engine.acquire() as conn:
                 trans = await conn.begin()
-                uid = await conn.scalar(users.insert().values(**user_dict))
+                query = users.insert().values(**user_dict)
+                uid = await conn.scalar(query)
                 if not uid:
                     await trans.rollback()
                 else:
-                    user_table_dict = {'user': uid, **user_data}
-                    uid = await conn.scalar(user_table.insert().values(**user_table_dict))
+                    user_table_dict = {'user_id': uid, **user_data}
+                    query = user_table.insert().values(**user_table_dict)
+                    uid = await conn.scalar(query)
                     if not uid:
                         await trans.rollback()
                     else:
@@ -211,7 +231,9 @@ class LocalManager(Manager):
         """ add dish to menu """
 
         values_dict = {'dish': dish}
-        return await self._insert(menu, values_dict)
+        async with create_engine(self.dsn) as engine:
+            async with engine.acquire() as conn:
+                await conn.execute(menu.insert().values(**values_dict))
 
     async def add_dish(self,
                        name: str,
@@ -237,7 +259,7 @@ class LocalManager(Manager):
 
         async with create_engine(self.dsn) as engine:
             async with engine.acquire() as conn:
-                query = (users.select([orders]).order_by(orders.c.ordered_at))
+                query = (sa.select([orders]).order_by(orders.c.ordered_at))
                 orders_list = await conn.execute(query).fetchmany(n)
                 return orders_list
 
@@ -255,10 +277,12 @@ class LocalManager(Manager):
         tree = await self.add_tree({tea: {white_tea: None, green_tea: None}}, admin)
 
         async def init_dish(name, category):
-            dish_id = await self.add_dish(name, name, 1.0, category, admin)
-            await self.add_dish_to_menu(dish_id)
+                dish_id = await self.add_dish(name, name, 1.0, category, admin)
+                return await self.add_dish_to_menu(dish_id)
 
-        green_tea_tasks = [init_dish(f"green_{i}", green_tea) for i in range(100)]
-        white_tea_tasks = [init_dish(f"white_{i}", white_tea) for i in range(100)]
+        green_tea_tasks = [init_dish(f"green_{i}", green_tea) for i in range(10)]
+        white_tea_tasks = [init_dish(f"white_{i}", white_tea) for i in range(10)]
         dish_tasks = green_tea_tasks + white_tea_tasks
+        #  g = asyncio.gather(dish_tasks)
+        #  gg = await g
         await asyncio.wait(dish_tasks)

@@ -15,22 +15,52 @@ export default class LoginComponent extends React.Component {
     }
   }
 
-  handleSubmit(e) {
-      e.preventDefault()
-      const data = { login: this.state.username, password: this.state.pw }
+    handleSubmit(e) {
+        e.preventDefault()
+        const data = { login: this.state.username, password: this.state.pw }
 
-      $.post(this.props.url, data).done(function(data) {
-        this.setState({
-          token: data.results.token,
-          expires: data.results.expire_at,
-          loggedIn: true,
-          error: ''
-        });
-      }.bind(this)).fail(function(data) {
-        this.setState({
-          error: 'Login details not correct'
-        });
-      }.bind(this));
+        $.ajax({
+              url: this.props.url,
+              type: "GET",
+              success: function(data) {
+                console.log("success")
+                console.log(data)
+                this.setState({
+                    token: data.results.token,
+                    expires: data.results.expire_at,
+                    loggedIn: true,
+                    error: ''
+                });
+              }.bind(this),
+            crossDomain: true,
+            withCredentials: true,
+            headers: {
+                    'login': this.state.username,
+                    'password': this.state.pw
+                },
+              error: function(xhr, status, err) {
+                  console.log('error')
+                  console.log(xhr);
+                  console.log(status);
+                  console.log(err);
+                this.setState({
+                    error: 'Login details not correct'
+                });
+              }.bind(this)
+            });
+
+      // $.post(this.props.url, data).done(function(data) {
+        // this.setState({
+          // token: data.results.token,
+          // expires: data.results.expire_at,
+          // loggedIn: true,
+          // error: ''
+        // });
+      // }.bind(this)).fail(function(data) {
+        // this.setState({
+          // error: 'Login details not correct'
+        // });
+      // }.bind(this));
   }
 
   logOut() {
@@ -60,7 +90,7 @@ class LoginDetails extends React.Component {
         <p><span>Token:</span> {this.props.token}</p>
         <p><span>Expires at:</span> {this.props.expires}</p>
         <button onClick={this.props.logout}>Logout</button>
-        <AioClient server={this.props.server}>
+        <AioClient server={this.props.server} />
       </div>
     )
   }
