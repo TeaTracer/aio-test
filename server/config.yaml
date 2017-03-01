@@ -14,3 +14,7 @@ database:
     currency_acc: [10, 2]
     token_time: 3600
 
+ssl:
+    crt: /etc/ssl/server.crt
+    key: /etc/ssl/server.key
+

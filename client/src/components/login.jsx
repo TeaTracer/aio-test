@@ -77,7 +77,7 @@ class LoginDetails extends React.Component {
         <p><span>Username:</span> {this.props.user}</p>
         <p><span>Token:</span> {this.props.token}</p>
         <button onClick={this.props.logout}>Logout</button>
-        <AioClient server={this.props.server} />
+        <AioClient server={this.props.server} token={this.props.token}/>
       </div>
     )
   }

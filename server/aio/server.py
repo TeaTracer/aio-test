@@ -1,29 +1,33 @@
 import asyncio
 import aiohttp
+import ssl
+import json
 from aiohttp import web
 from .db import Manager, RemoteManager, LocalManager
 import aiohttp_debugtoolbar
+from .settings import settings
 from aiohttp_debugtoolbar import toolbar_middleware_factory
 
+def get_ssl():
+    """ prepare ssl context """
 
-async def get_user(request, User):
+    key = settings["ssl"]["key"]
+    crt = settings["ssl"]["crt"]
+    sc = ssl.SSLContext()
+    sc.load_cert_chain(crt, key)
+
+    return sc
+
+async def get_user(token, User):
     """ get user from request """
 
-    user = None
-    if hasattr(request, 'cookies'):
-        token = request.cookies.get("token", None)
-        print(token)
-        if not token:
-            print("Cookies without token field")
-            raise HTTPForbidden()
-        manager = User()
-        user = await manager.verify_token(token)
-        print(user)
-        if not user:
-            print("Wrong token")
-            raise HTTPForbidden()
-    else:
-        print("Request without cookies")
+    if not token:
+        raise HTTPForbidden()
+    manager = User()
+    user = await manager.verify_token(token)
+    print(user)
+    if not user:
+        print("Wrong token")
         raise HTTPForbidden()
     return user
 
@@ -35,7 +39,7 @@ async def login_handler(request):
             print("OPTIONS")
             return web.Response()
 
-        print(request)
+        print('LOGIN REQUEST', request)
         login = request.headers['login']
         password = request.headers['password']
         manager = RemoteManager()
@@ -60,31 +64,47 @@ async def login_handler(request):
 
 async def websocket_remote_handler(request):
     print('REMOTE', request)
-    user = await get_user(request, RemoteManager)
+    token = request.match_info.get('token')
+    user = await get_user(token, RemoteManager)
+    print('FUSER', user)
 
     ws = web.WebSocketResponse()
-    await ws.prepare(request)
+    print("BEFORE", ws)
+    print(ws.can_prepare(request))
+    try:
+        #  import ipdb; ipdb.set_trace()
+        await ws.prepare(request)
+    except Exception as err:
+        print(err.args)
+        raise()
+    print("AFTER", ws)
 
-    async for msg in ws:
-        if msg.tp == aiohttp.MsgType.text:
-            if msg.data == 'close':
-                await ws.close()
-            else:
-                try:
-                    d = json.loads(msg.data)
-                except Exception as err:
-                    print(err)
-                    raise HTTPForbidden()
-                method = d.get('method', None)
-                data = d.get('data', None)
-                if method == 'echo':
-                    ws.send_str(data)
+    try:
+        async for msg in ws:
+            print(msg)
+            print(msg.data)
+            if msg.tp == aiohttp.MsgType.text:
+                if msg.data == 'close':
+                    await ws.close()
                 else:
-                    print(d)
+                    try:
+                        d = json.loads(msg.data)
+                    except Exception as err:
+                        print(err)
+                        raise HTTPForbidden()
+                    method = d.get('method', None)
+                    data = d.get('data', None)
+                    if method == 'echo':
+                        ws.send_str(json.dumps('echo'))
+                    else:
+                        print(d)
 
-        elif msg.tp == aiohttp.MsgType.error:
-            print('remote ws connection closed with exception %s' %
-                  ws.exception())
+            elif msg.tp == aiohttp.MsgType.error:
+                print('remote ws connection closed with exception %s' %
+                      ws.exception())
+    except Exception as err:
+        print(err.args)
+        raise()
 
     print('remote websocket connection closed')
 
@@ -98,12 +118,14 @@ async def websocket_local_handler(request):
     await ws.prepare(request)
 
     async for msg in ws:
+        print("MSSS", msg)
         if msg.tp == aiohttp.MsgType.text:
             if msg.data == 'close':
                 await ws.close()
             else:
                 try:
                     d = json.loads(msg.data)
+                    print(d)
                 except Exception as err:
                     print(err)
                     raise HTTPForbidden()
@@ -135,12 +157,16 @@ async def init(loop):
     app = web.Application(loop=loop)
     aiohttp_debugtoolbar.setup(app)
     #  await on_startup(app)
-    app.router.add_route('*', '/api/remote', websocket_remote_handler)
-    app.router.add_route('*', '/api/local', websocket_local_handler)
-    app.router.add_route('*', '/login/', login_handler)
+    remote = app.router.add_resource('/api/remote/{token}')
+    remote.add_route('*', websocket_remote_handler)
+    local = app.router.add_resource('/api/local/{token}')
+    local.add_route('*', websocket_local_handler)
+    #  app.router.add_route('*', '/api/remote', websocket_remote_handler)
+    #  app.router.add_route('*', '/api/local', websocket_local_handler)
+    app.router.add_route('*', '/api/login/', login_handler)
     app.router.add_route('*', '/', hello_handler)
     handler = app.make_handler()
-    srv = await loop.create_server(handler, '0.0.0.0', 8080)
+    srv = await loop.create_server(handler, '0.0.0.0', 8080, ssl=get_ssl())
     print("Server started at http://0.0.0.0:8080")
     return srv, handler
 

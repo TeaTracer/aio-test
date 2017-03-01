@@ -11,8 +11,7 @@ export default class AioClient extends React.Component {
     }
 
     componentDidMount() {
-        var ws = new WebSocket(this.props.server);
-        document.cookie = "token=" + this.props.token + ";";
+        var ws = new WebSocket(this.props.server + this.props.token);
 
         ws.onmessage = (event) => {
             var data = JSON.parse(event.data);

@@ -68,6 +68,10 @@ class Manager(metaclass=ABCMeta):
 
         pass
 
+    @property
+    @abstractmethod
+    def manager_type(self):
+        pass
 
     async def verify_credentials(self, login, password):
         """ verify login and password """
@@ -89,29 +93,39 @@ class Manager(metaclass=ABCMeta):
             print(err)
             raise HTTPForbidden()
 
-    async def create_token(self, uid):
-        """ get session token by user id """
-
-        token = hashtoken().decode()
-        values_dict = {'token': token, 'user_id': uid}
-        async with create_engine(self.dsn) as engine:
-            async with engine.acquire() as conn:
-                await conn.execute(tokens.insert().values(**values_dict))
-        return token
-
     async def verify_token(self, token):
         """ verify session token """
+        try:
+            async with aiopg.create_pool(self.dsn) as pool:
+                async with pool.acquire() as conn:
+                    async with conn.cursor() as cur:
+                        query = f"""
+                SELECT aio.{self.manager_type}.id
+                FROM aio.tokens JOIN aio.users ON aio.tokens.user_id = aio.users.id
+                JOIN aio.{self.manager_type} ON aio.{self.manager_type}.user_id = aio.users.id
+                WHERE aio.tokens.token = '{token}'"""
+                        await cur.execute(query)
+                        async for row in cur:
+                            return row[0]
+        except Exception as err:
+            print(err)
+            raise HTTPForbidden()
 
-        async with create_engine(self.dsn) as engine:
-            async with engine.acquire() as conn:
-                join = sa.join(self.user_table, tokens, self.user_table.c.id == tokens.c.user_id)
-                query = (sa.select([self.user_table.c.id, tokens])
-                         .select_from(join)
-                         .where(tokens.c.token == token))
-                async for uid, token in conn.execute(query):
-                    session_time = datetime.now() - token.c.inserted_at
-                    if session_time.total_seconds() < token_time:
-                        return uid
+    async def create_token(self, uid):
+        """ get session token by user id """
+        try:
+            token = hashtoken().decode()
+            async with aiopg.create_pool(self.dsn) as pool:
+                async with pool.acquire() as conn:
+                    async with conn.cursor() as cur:
+                        query = f"""
+                INSERT INTO aio.tokens (token, user_id)
+                VALUES ('{token}', '{uid}') """
+                        await cur.execute(query)
+                        return token
+        except Exception as err:
+            print(err)
+            raise HTTPForbidden()
 
     async def _insert(self, table, values_dict):
         """ one value insertion to table """
@@ -143,6 +157,10 @@ class RemoteManager(Manager):
 
         return remote_managers
 
+    @property
+    def manager_type(self):
+        return "remote_managers"
+
     async def get_menu(self):
         """ fetch all dishes from menu and the most actual tree id """
 
@@ -158,11 +176,17 @@ class RemoteManager(Manager):
     async def store_order(self, uid, tree_id, order, ordered_at):
         """ store remote order """
 
-        values_dict = {'manager': uid,
-                       'tree': tree_id,
-                       'order_data': order,
-                       'ordered_at': ordered_at}
-        return await self._insert(orders, values_dict)
+        try:
+            async with aiopg.create_pool(self.dsn) as pool:
+                async with pool.acquire() as conn:
+                    async with conn.cursor() as cur:
+                        query = f"""
+                INSERT INTO aio.orders(manager, tree, order_data, ordered_at)
+                VALUES ('{uid}', '{tree_id}', '{order_data}', '{ordered_at}') """
+                        return await cur.scalar(query)
+        except Exception as err:
+            print(err)
+            raise HTTPForbidden()
 
 
 class LocalManager(Manager):
@@ -173,6 +197,10 @@ class LocalManager(Manager):
         """ table for users of current type """
 
         return local_managers
+
+    @property
+    def manager_type(self):
+        return "local_managers"
 
     async def create_user(self, user_table, login, password, **user_data):
         """ create new users """

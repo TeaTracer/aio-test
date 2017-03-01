@@ -1,6 +1,10 @@
 #! /bin/sh
 
-DEST="/etc/ssl/"
+if [[ $# -eq 0 ]] ; then
+    DEST="/etc/ssl/"
+else
+    DEST="$1"
+fi
 PASSKEY="${DEST}server.pass.key"
 KEY="${DEST}server.key"
 CRT="${DEST}server.crt"
