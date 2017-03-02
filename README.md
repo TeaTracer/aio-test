@@ -1,6 +1,6 @@
 ### Aio
 
-![](./docs/images/voronoi.png?raw=true "Logo" =300x300)
+![](./docs/images/voronoi.png?raw=true "Logo" =100x100)
 
 Test web application with acyncio, aiohttp and aiopg. React frontend. 
 
