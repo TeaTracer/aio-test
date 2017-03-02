@@ -1,6 +1,6 @@
 ### Aio
 
-<img src="https://github.com/TeaTracer/aio-test/blob/dev/docs/images/voronoi.png?raw=true" width="100" height="100>
+<img src="https://github.com/TeaTracer/aio-test/blob/dev/docs/images/voronoi.png?raw=true" width="100" height="100">
 
 Test web application with acyncio, aiohttp and aiopg. React frontend. 
 
