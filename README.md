@@ -30,4 +30,4 @@ vagrant ssh
 
 This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details
 
-[logo]: https://github.com/TeaTracer/aio-test/raw/docs/images/voronoi.png "Voronoi logo"
+[logo]: https://github.com/TeaTracer/aio-test/blob/dev/docs/images/voronoi.png "Voronoi logo"
