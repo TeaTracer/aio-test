@@ -1,5 +1,7 @@
 ### Aio
 
+![alt text][logo]
+
 Test web application with acyncio, aiohttp and aiopg. React frontend. 
 
 ### Prerequisites
@@ -27,3 +29,5 @@ vagrant ssh
 ### License
 
 This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details
+
+[logo]: https://github.com/TeaTracer/aio-test/raw/docs/images/voronoi.png "Voronoi logo"
