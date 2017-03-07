@@ -78,10 +78,12 @@ fix_locale() {
 test_postgres() {
     local resval="$(psql -V 2> /dev/null)"
     if [ $? -eq 0 ]; then
-        local pg_version="$(echo $resval | awk '{print substr($NF, 1, 3)}')"
-        local enc="$(sudo -u postgres psql -c 'show server_encoding;' 2> /dev/null | head -3 | tail -1 | awk '{print $1}')"
-        if [ "$pg_version" = "9.6" ] && [ "$enc" = "UTF8" ]; then
-            return 0
+        if [ $(id -u postgres 2> /dev/null 1>&2; echo $?) -eq 0 ]; then
+            local pg_version="$(echo $resval | awk '{print substr($NF, 1, 3)}')"
+            local enc="$(sudo -u postgres psql -c 'show server_encoding;' 2> /dev/null | head -3 | tail -1 | awk '{print $1}')"
+            if [ "$pg_version" = "9.6" ] && [ "$enc" = "UTF8" ]; then
+                return 0
+            fi
         fi
     fi
     return 1
@@ -92,15 +94,14 @@ fix_postgres() {
     log sudo pg_dropcluster --stop 9.6 main
     log sudo pg_createcluster --locale en_US.UTF-8 --start 9.6 main
     echo "postgres:postgres" | sudo chpasswd
-    log sudo sed -i.bak 's/^\(local\ *all\ *postgres\ *\)peer$/\1md5/' /etc/postgresql/9.6/main/pg_hba.conf
+    log sudo sed -i.bak 's/^\(local\ *all\ *all\ *\)peer$/\1md5/' /etc/postgresql/9.6/main/pg_hba.conf
     log sudo service postgresql restart
 
 }
 
 test_database() {
     sudo -u postgres psql -q -d $DATABASE -v ON_ERROR_STOP=1 -c "select 2+2;" > /dev/null 2>&1
-    sudo -u postgres psql $DATABASE -c "select schema_name from information_schema.schemata;" | grep $SCHEMA 2> /dev/null 1>&2
-
+    sudo -u postgres psql $DATABASE -c "select schema_name from information_schema.schemata;" 2> /dev/null | grep $SCHEMA 2> /dev/null 1>&2
 }
 
 fix_database() {
