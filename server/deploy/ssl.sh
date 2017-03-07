@@ -1,6 +1,6 @@
 #! /bin/sh
 
-if [[ $# -eq 0 ]] ; then
+if [ $# = 0 ]; then
     DEST="/etc/ssl/"
 else
     DEST="$1"

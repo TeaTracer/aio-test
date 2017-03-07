@@ -19,6 +19,7 @@ ENV=".venv/bin/activate"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
+SSL_SCRIPT="${SCRIPT_PATH}/ssl.sh"
 NGINX_FROM="${SCRIPT_PATH}/nginx.conf"
 NGINX_TO="/etc/nginx/sites-available/default"
 
@@ -179,7 +180,7 @@ test_ssl() {
 }
 
 fix_ssl() {
-    (cd "$SCRIPT_PATH" && log sudo ./ssl.sh 2> /dev/null)
+    log sudo $SSL_SCRIPT 2> /dev/null
     log sudo apt-get install openssl -y 2> /dev/null
 }
 
