@@ -1,5 +1,6 @@
 import asyncio
 import aiopg
+from aiohttp import web
 import os
 import binascii
 from typing import Dict
@@ -83,15 +84,15 @@ class Manager(metaclass=ABCMeta):
                         query = f"""
                 SELECT id, password, salt
                 FROM aio.users
-                WHERE aio.users.login = '{login}'"""
-                        await cur.execute(query)
+                WHERE aio.users.login = %s"""
+                        await cur.execute(query, (login, ))
                         async for user_id, user_password, user_salt in cur:
                             _, test_hash = hashpass(password, user_salt)
                             if test_hash.decode() == user_password:
                                 return user_id
         except Exception as err:
             print(err)
-            raise HTTPForbidden()
+            raise web.HTTPForbidden()
 
     async def verify_token(self, token):
         """ verify session token """
@@ -99,17 +100,18 @@ class Manager(metaclass=ABCMeta):
             async with aiopg.create_pool(self.dsn) as pool:
                 async with pool.acquire() as conn:
                     async with conn.cursor() as cur:
+                        table = self.manager_type
                         query = f"""
-                SELECT aio.{self.manager_type}.id
+                SELECT aio.{table}.id
                 FROM aio.tokens JOIN aio.users ON aio.tokens.user_id = aio.users.id
-                JOIN aio.{self.manager_type} ON aio.{self.manager_type}.user_id = aio.users.id
-                WHERE aio.tokens.token = '{token}'"""
-                        await cur.execute(query)
+                JOIN aio.{table} ON aio.{table}.user_id = aio.users.id
+                WHERE aio.tokens.token = %s"""
+                        await cur.execute(query, (token, ))
                         async for row in cur:
                             return row[0]
         except Exception as err:
             print(err)
-            raise HTTPForbidden()
+            raise web.HTTPForbidden()
 
     async def create_token(self, uid):
         """ get session token by user id """
@@ -125,7 +127,7 @@ class Manager(metaclass=ABCMeta):
                         return token
         except Exception as err:
             print(err)
-            raise HTTPForbidden()
+            raise web.HTTPForbidden()
 
     async def _insert(self, table, values_dict):
         """ one value insertion to table """
@@ -186,7 +188,7 @@ class RemoteManager(Manager):
                         return await cur.scalar(query)
         except Exception as err:
             print(err)
-            raise HTTPForbidden()
+            raise web.HTTPForbidden()
 
 
 class LocalManager(Manager):
