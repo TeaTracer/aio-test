@@ -1,8 +1,7 @@
-### Aio
 
-![](./docs/images/voronoi.png?raw=true "Logo" =100x100)
+<img src="https://github.com/TeaTracer/aio-test/blob/dev/docs/images/voronoi.png?raw=true" width="200" height="200">
 
-Test web application with acyncio, aiohttp and aiopg. React frontend. 
+Test web application with acyncio, aiohttp and aiopg. React frontend.
 
 ### Prerequisites
 
